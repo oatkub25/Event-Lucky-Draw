@@ -1,58 +1,17 @@
 // App Logic & Orchestration
-const CLOUD_SYNC_URL = 'https://kvdb.io/WJ2N9Z4cT8eR5xL1pQ7m2a/sf_canon_participants';
-
 class LuckyDrawApp {
   constructor() {
     this.participants = [];
     this.winners = [];
-    this.prizes = [
-      {
-        id: 'grand',
-        name: '🏆 Grand Prize: Autonomous Electric Scooter',
-        total: 1,
-        drawBatch: 1,
-        imgUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=300&auto=format&fit=crop'
-      },
-      {
-        id: 'gold',
-        name: '🥇 Gold Prize: Cyber Deck Tablet Gen-X',
-        total: 3,
-        drawBatch: 1,
-        imgUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&auto=format&fit=crop'
-      },
-      {
-        id: 'silver',
-        name: '🥈 Silver Prize: Smart Factory Smart Watch',
-        total: 5,
-        drawBatch: 5,
-        imgUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&auto=format&fit=crop'
-      },
-      {
-        id: 'special',
-        name: '🎁 Special Prize: Noise-Canceling HUD Headphones',
-        total: 10,
-        drawBatch: 10,
-        imgUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&auto=format&fit=crop'
-      }
-    ];
-
+    this.prizes = PrizeManager.defaultPrizes();
     this.currentBatchSize = 1;
     this.isDrawing = false;
     this.particleSphere = null;
-
     this.loadState();
   }
 
   init() {
-    // Ensure draw button state is clean and ready
-    const drawBtn = document.getElementById('drawBtn');
-    if (drawBtn) {
-      drawBtn.classList.remove('drawing');
-      drawBtn.disabled = false;
-    }
-    this.isDrawing = false;
-
-    // Init 3D Particle Sphere with active stored candidates
+    this.resetDrawButtonState();
     this.particleSphere = new ParticleSphere('particleCanvas');
     this.particleSphere.setCandidates(this.getEligibleParticipants());
     this.particleSphere.animate();
@@ -61,43 +20,25 @@ class LuckyDrawApp {
     this.setupEventListeners();
     this.updateStats();
     this.updateActivePrizeDisplay();
-    this.startCloudSyncPoller();
-  }
 
-  // Real-time Cloud Storage Poller across devices over Internet
-  startCloudSyncPoller() {
-    const syncCloudData = async () => {
-      try {
-        const res = await fetch(CLOUD_SYNC_URL);
-        if (res.ok) {
-          const cloudParticipants = await res.json();
-          if (Array.isArray(cloudParticipants) && cloudParticipants.length > 0) {
-            let hasNew = false;
-            const existingIds = new Set(this.participants.map(p => p.id));
-            
-            cloudParticipants.forEach(cp => {
-              if (cp && cp.id && !existingIds.has(cp.id)) {
-                this.participants.push(cp);
-                existingIds.add(cp.id);
-                hasNew = true;
-              }
-            });
-
-            if (hasNew) {
-              this.saveState();
-              this.updateStats();
-              this.renderParticipantTable();
-              this.particleSphere.setCandidates(this.getEligibleParticipants());
-            }
-          }
+    // Start 3-second Cloud Storage Poller
+    CloudSyncEngine.startPoller((cloudList) => {
+      let hasNew = false;
+      const existingIds = new Set(this.participants.map(p => p.id));
+      cloudList.forEach(cp => {
+        if (cp && cp.id && !existingIds.has(cp.id)) {
+          this.participants.push(cp);
+          existingIds.add(cp.id);
+          hasNew = true;
         }
-      } catch (e) {
-        // Fallback gracefully
+      });
+      if (hasNew) {
+        this.saveState();
+        this.updateStats();
+        this.renderParticipantTable();
+        this.particleSphere.setCandidates(this.getEligibleParticipants());
       }
-    };
-
-    syncCloudData();
-    setInterval(syncCloudData, 3000);
+    });
   }
 
   getEligibleParticipants() {
@@ -106,30 +47,10 @@ class LuckyDrawApp {
   }
 
   setupUI() {
-    this.renderPrizeDropdown();
+    PrizeManager.renderDropdown(this.prizes, document.getElementById('prizeSelect'));
+    PrizeManager.renderGrid(this.prizes, document.getElementById('prizeListGrid'), (id) => this.deletePrize(id));
     this.renderParticipantTable();
     this.renderWinnerHistoryTable();
-    this.renderPrizeListGrid();
-  }
-
-  renderPrizeDropdown() {
-    const prizeSelect = document.getElementById('prizeSelect');
-    prizeSelect.innerHTML = '';
-
-    if (this.prizes.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = '-- ยังไม่มีของรางวัล --';
-      prizeSelect.appendChild(opt);
-      return;
-    }
-
-    this.prizes.forEach(prize => {
-      const opt = document.createElement('option');
-      opt.value = prize.id;
-      opt.textContent = `${prize.name} (${prize.total} รางวัล)`;
-      prizeSelect.appendChild(opt);
-    });
   }
 
   updateActivePrizeDisplay() {
@@ -145,21 +66,15 @@ class LuckyDrawApp {
     if (activePrize) {
       document.getElementById('stagePrizeTitle').textContent = activePrize.name;
       document.getElementById('stagePrizeImg').src = activePrize.imgUrl || 'https://via.placeholder.com/300?text=No+Image';
-
-      // Lock current batch size based on active prize configuration
       this.currentBatchSize = activePrize.drawBatch || 1;
       document.getElementById('activeBatchDisplay').textContent = `${this.currentBatchSize} คน`;
     }
   }
 
   setupEventListeners() {
-    // Draw Button Trigger
     document.getElementById('drawBtn').addEventListener('click', () => this.executeDraw());
-
-    // Prize Select Listener
     document.getElementById('prizeSelect').addEventListener('change', () => this.updateActivePrizeDisplay());
 
-    // Sound Toggle Button
     const soundBtn = document.getElementById('soundToggleBtn');
     soundBtn.addEventListener('click', () => {
       const isEnabled = window.soundEngine.toggleSound();
@@ -167,10 +82,7 @@ class LuckyDrawApp {
       soundBtn.style.color = isEnabled ? 'var(--cyan-primary)' : 'var(--text-muted)';
     });
 
-    // Fullscreen Stage Toggle
     document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
-
-    // QR Registration Trigger
     document.getElementById('qrBtn').addEventListener('click', () => this.openQRModal());
     document.getElementById('copyUrlBtn').addEventListener('click', () => {
       const urlInput = document.getElementById('qrRegUrlInput');
@@ -179,7 +91,6 @@ class LuckyDrawApp {
       alert('📋 คัดลอกลิงก์หน้าลงทะเบียนเรียบร้อยแล้ว!');
     });
 
-    // Modals Handlers
     document.getElementById('prizesBtn').addEventListener('click', () => this.openModal('prizeModal'));
     document.getElementById('manageBtn').addEventListener('click', () => this.openModal('manageModal'));
     document.getElementById('historyBtn').addEventListener('click', () => this.openModal('historyModal'));
@@ -191,28 +102,24 @@ class LuckyDrawApp {
       });
     });
 
-    // Add Prize Form
     document.getElementById('addPrizeForm').addEventListener('submit', (e) => {
       e.preventDefault();
       this.handleAddPrize();
     });
 
-    // Clear All Prizes Button
     document.getElementById('clearAllPrizesBtn').addEventListener('click', () => {
       if (confirm('⚠️ คุณต้องการลบของรางวัลทั้งหมดในระบบหรือไม่?')) {
         this.prizes = [];
         this.saveState();
-        this.renderPrizeDropdown();
-        this.renderPrizeListGrid();
+        PrizeManager.renderDropdown(this.prizes, document.getElementById('prizeSelect'));
+        PrizeManager.renderGrid(this.prizes, document.getElementById('prizeListGrid'), (id) => this.deletePrize(id));
         this.updateActivePrizeDisplay();
         alert('🗑️ ลบรายการของรางวัลทั้งหมดเรียบร้อยแล้ว');
       }
     });
 
-    // CSV File Upload / Dropzone
     const dropzone = document.getElementById('fileDropzone');
     const fileInput = document.getElementById('csvFileInput');
-
     dropzone.addEventListener('click', () => fileInput.click());
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
@@ -225,7 +132,6 @@ class LuckyDrawApp {
       if (e.target.files.length) this.handleCSVImport(e.target.files[0]);
     });
 
-    // Clear All Participants Button
     document.getElementById('clearAllParticipantsBtn').addEventListener('click', () => {
       if (confirm('⚠️ คุณต้องการลบรายชื่อผู้เข้าร่วมงานทั้งหมดหรือไม่?')) {
         this.participants = [];
@@ -235,13 +141,11 @@ class LuckyDrawApp {
         this.renderParticipantTable();
         this.renderWinnerHistoryTable();
         this.particleSphere.setCandidates([]);
-        // Clear cloud storage as well
-        fetch(CLOUD_SYNC_URL, { method: 'POST', body: JSON.stringify([]) }).catch(e=>{});
+        CloudSyncEngine.resetCloudData();
         alert('🗑️ ลบรายชื่อผู้เข้าร่วมงานทั้งหมดเรียบร้อยแล้ว');
       }
     });
 
-    // Reset Winners Button
     document.getElementById('resetWinnersBtn').addEventListener('click', () => {
       if (confirm('คุณต้องการรีเซ็ตประวัติผู้โชคดีทั้งหมดหรือไม่?')) {
         this.winners = [];
@@ -254,19 +158,17 @@ class LuckyDrawApp {
 
     document.getElementById('exportCsvBtn').addEventListener('click', () => this.exportWinnersCSV());
 
-    // Live Sync on LocalStorage change from attendee register.html or other tab
     window.addEventListener('storage', () => {
       this.loadState();
       this.updateStats();
       this.renderParticipantTable();
       this.renderWinnerHistoryTable();
-      this.renderPrizeDropdown();
-      this.renderPrizeListGrid();
+      PrizeManager.renderDropdown(this.prizes, document.getElementById('prizeSelect'));
+      PrizeManager.renderGrid(this.prizes, document.getElementById('prizeListGrid'), (id) => this.deletePrize(id));
       this.updateActivePrizeDisplay();
       this.particleSphere.setCandidates(this.getEligibleParticipants());
     });
 
-    // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !this.isDrawing) {
         e.preventDefault();
@@ -287,7 +189,6 @@ class LuckyDrawApp {
     const batch = parseInt(document.getElementById('newPrizeBatch').value) || 1;
     const imgUrlInput = document.getElementById('newPrizeImgUrl').value.trim();
     const fileInput = document.getElementById('newPrizeImgFile');
-
     if (!name) return;
 
     const processNewPrize = (finalImgUrl) => {
@@ -298,14 +199,11 @@ class LuckyDrawApp {
         drawBatch: batch,
         imgUrl: finalImgUrl || 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=300&auto=format&fit=crop'
       };
-
       this.prizes.push(newPrize);
       this.saveState();
-      this.renderPrizeDropdown();
-      this.renderPrizeListGrid();
+      PrizeManager.renderDropdown(this.prizes, document.getElementById('prizeSelect'));
+      PrizeManager.renderGrid(this.prizes, document.getElementById('prizeListGrid'), (id) => this.deletePrize(id));
       this.updateActivePrizeDisplay();
-
-      // Reset form
       document.getElementById('addPrizeForm').reset();
       alert('✅ เพิ่มของรางวัลสำเร็จเรียบร้อยแล้ว!');
     };
@@ -323,8 +221,8 @@ class LuckyDrawApp {
     if (confirm('คุณต้องการลบของรางวัลนี้หรือไม่?')) {
       this.prizes = this.prizes.filter(p => p.id !== prizeId);
       this.saveState();
-      this.renderPrizeDropdown();
-      this.renderPrizeListGrid();
+      PrizeManager.renderDropdown(this.prizes, document.getElementById('prizeSelect'));
+      PrizeManager.renderGrid(this.prizes, document.getElementById('prizeListGrid'), (id) => this.deletePrize(id));
       this.updateActivePrizeDisplay();
     }
   }
@@ -337,20 +235,12 @@ class LuckyDrawApp {
     this.renderParticipantTable();
     this.renderWinnerHistoryTable();
     this.particleSphere.setCandidates(this.getEligibleParticipants());
-
-    // Update cloud storage list
-    fetch(CLOUD_SYNC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.participants)
-    }).catch(e=>{});
   }
 
   openQRModal() {
     const qrcodeBox = document.getElementById('qrcodeBox');
     const urlInput = document.getElementById('qrRegUrlInput');
     
-    // Robust, foolproof URL resolution for GitHub Pages repository subdirectories
     let regUrl;
     if (window.location.origin && window.location.pathname) {
       let path = window.location.pathname;
@@ -389,14 +279,12 @@ class LuckyDrawApp {
   executeDraw() {
     const drawBtn = document.getElementById('drawBtn');
 
-    // Safety Check 1: Must have prizes
     if (this.prizes.length === 0) {
       alert('⚠️ ยังไม่มีของรางวัลในระบบ กรุณากดเพิ่มของรางวัล (ปุ่มของขวัญสีเขียวด้านบน) ก่อนเริ่มจับรางวัล');
       this.resetDrawButtonState();
       return;
     }
 
-    // Safety Check 2: Must have eligible candidates
     const eligible = this.getEligibleParticipants();
     if (eligible.length === 0) {
       alert('⚠️ ไม่พบรายชื่อผู้เข้าร่วมในระบบ กรุณาสแกน QR Code หรือนำเข้าไฟล์ CSV รายชื่อผู้เข้าร่วมก่อนเริ่มจับรางวัล');
@@ -409,49 +297,37 @@ class LuckyDrawApp {
     try {
       const drawCount = Math.min(this.currentBatchSize, eligible.length);
       this.isDrawing = true;
-
       drawBtn.classList.add('drawing');
       drawBtn.disabled = true;
 
-      // Sound FX: Start spin tension charging sound track
       window.soundEngine.playSpinStart(2.5);
-
-      // Accelerate particle sphere spin
       this.particleSphere.startSpin();
 
-      // Sound tick interval during high-speed rotation
-      const tickInterval = setInterval(() => {
-        window.soundEngine.playTick();
-      }, 120);
+      const tickInterval = setInterval(() => window.soundEngine.playTick(), 120);
 
       setTimeout(() => {
         clearInterval(tickInterval);
 
         const selectedPrizeId = document.getElementById('prizeSelect').value;
         const prizeInfo = this.prizes.find(p => p.id === selectedPrizeId);
-
         const currentWinners = [];
         const tempPool = [...eligible];
 
         for (let i = 0; i < drawCount; i++) {
           const randomIndex = Math.floor(Math.random() * tempPool.length);
           const winner = tempPool.splice(randomIndex, 1)[0];
-          
           const winnerRecord = {
             ...winner,
             prizeName: prizeInfo ? prizeInfo.name : 'รางวัลพิเศษ',
             prizeImg: prizeInfo ? prizeInfo.imgUrl : '',
             drawnAt: new Date().toLocaleTimeString('th-TH')
           };
-
           currentWinners.push(winnerRecord);
           this.winners.unshift(winnerRecord);
         }
 
-        // Stop particle spin and trigger shockwave collapse
         this.particleSphere.stopSpinAndExplode(() => {
           window.soundEngine.playRevealExplosion();
-
           setTimeout(() => {
             window.soundEngine.playVictoryFanfare();
             this.displayWinnersModal(currentWinners, prizeInfo);
@@ -461,9 +337,7 @@ class LuckyDrawApp {
             this.updateStats();
             this.renderWinnerHistoryTable();
             this.particleSphere.setCandidates(this.getEligibleParticipants());
-
             this.resetDrawButtonState();
-
           }, 300);
         });
 
@@ -498,12 +372,10 @@ class LuckyDrawApp {
     }
 
     winnerGrid.innerHTML = '';
-
     newWinners.forEach((winner, index) => {
       const card = document.createElement('div');
       card.className = 'winner-card';
       card.style.animationDelay = `${index * 0.15}s`;
-
       const initial = winner.name.charAt(0);
 
       card.innerHTML = `
@@ -548,7 +420,6 @@ class LuckyDrawApp {
         p.x += p.vx;
         p.y += p.vy;
         p.rot += p.vRot;
-
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate((p.rot * Math.PI) / 180);
@@ -594,14 +465,6 @@ class LuckyDrawApp {
         this.renderParticipantTable();
         this.renderWinnerHistoryTable();
         this.particleSphere.setCandidates(this.getEligibleParticipants());
-
-        // Sync CSV import to cloud
-        fetch(CLOUD_SYNC_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.participants)
-        }).catch(e=>{});
-
         alert(`✅ นำเข้าข้อมูลสำเร็จเรียบร้อย! ทั้งหมด ${imported.length} รายชื่อ`);
       } else {
         alert('⚠️ ไม่พบข้อมูลรายชื่อในไฟล์ที่เลือก');
@@ -642,7 +505,6 @@ class LuckyDrawApp {
     }
 
     const winnerIds = new Set(this.winners.map(w => w.id));
-
     this.participants.forEach((p, idx) => {
       const isWinner = winnerIds.has(p.id);
       const tr = document.createElement('tr');
@@ -657,38 +519,13 @@ class LuckyDrawApp {
           </span>
         </td>
         <td style="text-align: center;">
-          <button class="table-del-btn" onclick="window.app.deleteParticipant('${p.id}')" title="ลบรายชื่อนี้">
+          <button class="table-del-btn" title="ลบรายชื่อนี้">
             <i class="fas fa-trash-alt"></i>
           </button>
         </td>
       `;
+      tr.querySelector('.table-del-btn').addEventListener('click', () => this.deleteParticipant(p.id));
       tbody.appendChild(tr);
-    });
-  }
-
-  renderPrizeListGrid() {
-    const grid = document.getElementById('prizeListGrid');
-    grid.innerHTML = '';
-
-    if (this.prizes.length === 0) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 30px;">ยังไม่มีของรางวัลในระบบ (โปรดกดเพิ่มของรางวัลด้านบน)</div>`;
-      return;
-    }
-
-    this.prizes.forEach(prize => {
-      const item = document.createElement('div');
-      item.className = 'prize-card-item';
-      item.innerHTML = `
-        <img class="prize-card-img" src="${prize.imgUrl || 'https://via.placeholder.com/60'}" alt="Prize">
-        <div class="prize-card-details">
-          <div class="prize-card-title">${prize.name}</div>
-          <div class="prize-card-count">รวม ${prize.total} รางวัล (สุ่มรอบละ ${prize.drawBatch || 1} คน)</div>
-        </div>
-        <button class="table-del-btn" onclick="window.app.deletePrize('${prize.id}')" title="ลบรางวัลนี้">
-          <i class="fas fa-trash-alt"></i>
-        </button>
-      `;
-      grid.appendChild(item);
     });
   }
 
