@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Factory Event Registration / ลงทะเบียนเข้าร่วมงาน</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      overflow-y: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 15px;
+    }
+
+    .reg-card {
+      background: rgba(11, 16, 28, 0.95);
+      border: 1px solid var(--cyan-primary);
+      box-shadow: 0 0 30px rgba(0, 243, 255, 0.25), inset 0 0 20px rgba(0, 243, 255, 0.05);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 30px 25px;
+      position: relative;
+      backdrop-filter: blur(16px);
+    }
+
+    .lang-switcher {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .lang-btn {
+      background: rgba(0, 243, 255, 0.1);
+      border: 1px solid var(--border-cyan);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: var(--font-title);
+    }
+
+    .lang-btn.active {
+      color: var(--cyan-primary);
+      border-color: var(--cyan-primary);
+      background: rgba(0, 243, 255, 0.2);
+    }
+
+    .reg-header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .reg-header h2 {
+      font-family: var(--font-title);
+      color: var(--cyan-primary);
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .reg-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-family: var(--font-title);
+      font-size: 0.85rem;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-label span.en {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .cyber-input {
+      background: rgba(16, 24, 43, 0.9);
+      border: 1px solid var(--border-cyan);
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .cyber-input:focus {
+      border-color: var(--cyan-primary);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #00f3ff 0%, #0088ff 100%);
+      border: none;
+      color: #050b14;
+      padding: 16px;
+      font-family: var(--font-title);
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px var(--cyan-primary);
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--cyan-primary);
+    }
+
+    .success-card {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(0, 255, 136, 0.15);
+      border: 2px solid var(--green-active);
+      color: var(--green-active);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 20px var(--green-active);
+    }
+
+    .badge-id {
+      background: rgba(0, 243, 255, 0.1);
+      border: 1px dashed var(--cyan-primary);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-family: var(--font-title);
+      color: var(--cyan-primary);
+      font-size: 1.2rem;
+      margin: 15px 0;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="reg-card">
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="switchLang('th')">TH</button>
+      <button class="lang-btn" onclick="switchLang('en')">EN</button>
+    </div>
+
+    <!-- Registration Form -->
+    <form id="regForm">
+      <div class="reg-header">
+        <div class="brand-icon" style="margin: 0 auto 12px; width: 45px; height: 45px;">SF</div>
+        <h2 id="titleText">ลงทะเบียนสุ่มรางวัล</h2>
+        <p id="subtitleText">Smart Factory Cyber Event Lucky Draw</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span id="lblFirstNameTH">1. ชื่อ</span>
+          <span class="en" id="lblFirstNameEN">First Name</span>
+        </label>
+        <input type="text" id="firstName" class="cyber-input" placeholder="กรอกชื่อ / Enter first name" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span id="lblLastNameTH">2. นามสกุล</span>
+          <span class="en" id="lblLastNameEN">Last Name</span>
+        </label>
+        <input type="text" id="lastName" class="cyber-input" placeholder="กรอกนามสกุล / Enter last name" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span id="lblCompanyTH">3. ชื่อบริษัท / หน่วยงาน</span>
+          <span class="en" id="lblCompanyEN">Company Name</span>
+        </label>
+        <input type="text" id="company" class="cyber-input" placeholder="กรอกชื่อบริษัท / Enter company name" required>
+      </div>
+
+      <button type="submit" class="submit-btn" id="btnSubmit">
+        <i class="fas fa-check-circle"></i> ยืนยันลงทะเบียน / SUBMIT
+      </button>
+    </form>
+
+    <!-- Success Confirmation -->
+    <div class="success-card" id="successCard">
+      <div class="success-icon"><i class="fas fa-check"></i></div>
+      <h3 style="font-family: var(--font-title); color: var(--green-active); font-size: 1.4rem;" id="succTitle">ลงทะเบียนสำเร็จ!</h3>
+      <p style="color: var(--text-main); margin-top: 5px;" id="succDesc">คุณเข้าสู่ระบบสุ่มรางวัลเรียบร้อยแล้ว</p>
+      
+      <div class="badge-id" id="assignedId">ID: SF-9999</div>
+
+      <p style="color: var(--text-muted); font-size: 0.85rem;" id="succFoot">ขอบคุณที่เข้าร่วมงาน Smart Factory Event</p>
+    </div>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      if (lang === 'en') {
+        document.getElementById('titleText').textContent = 'EVENT REGISTRATION';
+        document.getElementById('subtitleText').textContent = 'Enter details to enter the lucky draw pool';
+        document.getElementById('lblFirstNameTH').textContent = '1. First Name';
+        document.getElementById('lblFirstNameEN').textContent = '';
+        document.getElementById('lblLastNameTH').textContent = '2. Last Name';
+        document.getElementById('lblLastNameEN').textContent = '';
+        document.getElementById('lblCompanyTH').textContent = '3. Company Name';
+        document.getElementById('lblCompanyEN').textContent = '';
+        document.getElementById('firstName').placeholder = 'Enter your first name';
+        document.getElementById('lastName').placeholder = 'Enter your last name';
+        document.getElementById('company').placeholder = 'Enter your company name';
+        document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-check-circle"></i> REGISTER NOW';
+        document.getElementById('succTitle').textContent = 'REGISTRATION SUCCESSFUL!';
+        document.getElementById('succDesc').textContent = 'You are now entered into the lucky draw pool.';
+        document.getElementById('succFoot').textContent = 'Thank you for joining the Smart Factory Event';
+      } else {
+        document.getElementById('titleText').textContent = 'ลงทะเบียนสุ่มรางวัล';
+        document.getElementById('subtitleText').textContent = 'Smart Factory Cyber Event Lucky Draw';
+        document.getElementById('lblFirstNameTH').textContent = '1. ชื่อ';
+        document.getElementById('lblFirstNameEN').textContent = 'First Name';
+        document.getElementById('lblLastNameTH').textContent = '2. นามสกุล';
+        document.getElementById('lblLastNameEN').textContent = 'Last Name';
+        document.getElementById('lblCompanyTH').textContent = '3. ชื่อบริษัท / หน่วยงาน';
+        document.getElementById('lblCompanyEN').textContent = 'Company Name';
+        document.getElementById('firstName').placeholder = 'กรอกชื่อ / Enter first name';
+        document.getElementById('lastName').placeholder = 'กรอกนามสกุล / Enter last name';
+        document.getElementById('company').placeholder = 'กรอกชื่อบริษัท / Enter company name';
+        document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-check-circle"></i> ยืนยันลงทะเบียน / SUBMIT';
+        document.getElementById('succTitle').textContent = 'ลงทะเบียนสำเร็จ!';
+        document.getElementById('succDesc').textContent = 'คุณเข้าสู่ระบบสุ่มรางวัลเรียบร้อยแล้ว';
+        document.getElementById('succFoot').textContent = 'ขอบคุณที่เข้าร่วมงาน Smart Factory Event';
+      }
+    }
+
+    document.getElementById('regForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const company = document.getElementById('company').value.trim();
+
+      if (!firstName || !lastName || !company) return;
+
+      const savedP = localStorage.getItem('sf_participants');
+      let participants = savedP ? JSON.parse(savedP) : [];
+
+      const newId = `SF-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newCandidate = {
+        id: newId,
+        name: `${firstName} ${lastName}`,
+        dept: company,
+        registeredAt: new Date().toISOString()
+      };
+
+      participants.push(newCandidate);
+      localStorage.setItem('sf_participants', JSON.stringify(participants));
+
+      // Broadcast changes to main window
+      window.dispatchEvent(new Event('storage'));
+
+      document.getElementById('regForm').style.display = 'none';
+      document.getElementById('assignedId').textContent = `ID: ${newId}`;
+      document.getElementById('successCard').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
