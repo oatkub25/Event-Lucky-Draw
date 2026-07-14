@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Factory Event Registration / ลงทะเบียนเข้าร่วมงาน</title>
+  <title>CANON Lucky Draw - Registration / ลงทะเบียนเข้าร่วมงาน</title>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
@@ -175,9 +175,9 @@
     <!-- Registration Form -->
     <form id="regForm">
       <div class="reg-header">
-        <div class="brand-icon" style="margin: 0 auto 12px; width: 45px; height: 45px;">SF</div>
+        <div class="brand-icon canon-brand-icon" style="margin: 0 auto 12px; width: auto; padding: 0 14px; height: 40px; font-size: 1rem;">CANON</div>
         <h2 id="titleText">ลงทะเบียนสุ่มรางวัล</h2>
-        <p id="subtitleText">Smart Factory Cyber Event Lucky Draw</p>
+        <p id="subtitleText">CANON EVENT LUCKY DRAW</p>
       </div>
 
       <div class="form-group">
@@ -217,11 +217,13 @@
       
       <div class="badge-id" id="assignedId">ID: SF-9999</div>
 
-      <p style="color: var(--text-muted); font-size: 0.85rem;" id="succFoot">ขอบคุณที่เข้าร่วมงาน Smart Factory Event</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem;" id="succFoot">ขอบคุณที่เข้าร่วมงาน CANON Event</p>
     </div>
   </div>
 
   <script>
+    const CLOUD_SYNC_URL = 'https://kvdb.io/WJ2N9Z4cT8eR5xL1pQ7m2a/sf_canon_participants';
+
     function switchLang(lang) {
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
@@ -241,10 +243,10 @@
         document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-check-circle"></i> REGISTER NOW';
         document.getElementById('succTitle').textContent = 'REGISTRATION SUCCESSFUL!';
         document.getElementById('succDesc').textContent = 'You are now entered into the lucky draw pool.';
-        document.getElementById('succFoot').textContent = 'Thank you for joining the Smart Factory Event';
+        document.getElementById('succFoot').textContent = 'Thank you for joining the CANON Event';
       } else {
         document.getElementById('titleText').textContent = 'ลงทะเบียนสุ่มรางวัล';
-        document.getElementById('subtitleText').textContent = 'Smart Factory Cyber Event Lucky Draw';
+        document.getElementById('subtitleText').textContent = 'CANON EVENT LUCKY DRAW';
         document.getElementById('lblFirstNameTH').textContent = '1. ชื่อ';
         document.getElementById('lblFirstNameEN').textContent = 'First Name';
         document.getElementById('lblLastNameTH').textContent = '2. นามสกุล';
@@ -257,11 +259,11 @@
         document.getElementById('btnSubmit').innerHTML = '<i class="fas fa-check-circle"></i> ยืนยันลงทะเบียน / SUBMIT';
         document.getElementById('succTitle').textContent = 'ลงทะเบียนสำเร็จ!';
         document.getElementById('succDesc').textContent = 'คุณเข้าสู่ระบบสุ่มรางวัลเรียบร้อยแล้ว';
-        document.getElementById('succFoot').textContent = 'ขอบคุณที่เข้าร่วมงาน Smart Factory Event';
+        document.getElementById('succFoot').textContent = 'ขอบคุณที่เข้าร่วมงาน CANON Event';
       }
     }
 
-    document.getElementById('regForm').addEventListener('submit', (e) => {
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const firstName = document.getElementById('firstName').value.trim();
@@ -270,10 +272,7 @@
 
       if (!firstName || !lastName || !company) return;
 
-      const savedP = localStorage.getItem('sf_participants');
-      let participants = savedP ? JSON.parse(savedP) : [];
-
-      const newId = `SF-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newId = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
       const newCandidate = {
         id: newId,
         name: `${firstName} ${lastName}`,
@@ -281,11 +280,30 @@
         registeredAt: new Date().toISOString()
       };
 
+      // 1. Save to mobile local storage
+      const savedP = localStorage.getItem('sf_participants');
+      let participants = savedP ? JSON.parse(savedP) : [];
       participants.push(newCandidate);
       localStorage.setItem('sf_participants', JSON.stringify(participants));
 
-      // Broadcast changes to main window
-      window.dispatchEvent(new Event('storage'));
+      // 2. Real-time Internet Cloud Sync to main stage screen
+      try {
+        const fetchRes = await fetch(CLOUD_SYNC_URL);
+        let cloudList = [];
+        if (fetchRes.ok) {
+          cloudList = await fetchRes.json();
+        }
+        if (!Array.isArray(cloudList)) cloudList = [];
+        cloudList.push(newCandidate);
+
+        await fetch(CLOUD_SYNC_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cloudList)
+        });
+      } catch (err) {
+        console.log('Cloud sync pending', err);
+      }
 
       document.getElementById('regForm').style.display = 'none';
       document.getElementById('assignedId').textContent = `ID: ${newId}`;

@@ -1,4 +1,6 @@
 // App Logic & Orchestration
+const CLOUD_SYNC_URL = 'https://kvdb.io/WJ2N9Z4cT8eR5xL1pQ7m2a/sf_canon_participants';
+
 class LuckyDrawApp {
   constructor() {
     this.participants = [];
@@ -59,6 +61,43 @@ class LuckyDrawApp {
     this.setupEventListeners();
     this.updateStats();
     this.updateActivePrizeDisplay();
+    this.startCloudSyncPoller();
+  }
+
+  // Real-time Cloud Storage Poller across devices over Internet
+  startCloudSyncPoller() {
+    const syncCloudData = async () => {
+      try {
+        const res = await fetch(CLOUD_SYNC_URL);
+        if (res.ok) {
+          const cloudParticipants = await res.json();
+          if (Array.isArray(cloudParticipants) && cloudParticipants.length > 0) {
+            let hasNew = false;
+            const existingIds = new Set(this.participants.map(p => p.id));
+            
+            cloudParticipants.forEach(cp => {
+              if (cp && cp.id && !existingIds.has(cp.id)) {
+                this.participants.push(cp);
+                existingIds.add(cp.id);
+                hasNew = true;
+              }
+            });
+
+            if (hasNew) {
+              this.saveState();
+              this.updateStats();
+              this.renderParticipantTable();
+              this.particleSphere.setCandidates(this.getEligibleParticipants());
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    };
+
+    syncCloudData();
+    setInterval(syncCloudData, 3000);
   }
 
   getEligibleParticipants() {
@@ -196,6 +235,8 @@ class LuckyDrawApp {
         this.renderParticipantTable();
         this.renderWinnerHistoryTable();
         this.particleSphere.setCandidates([]);
+        // Clear cloud storage as well
+        fetch(CLOUD_SYNC_URL, { method: 'POST', body: JSON.stringify([]) }).catch(e=>{});
         alert('🗑️ ลบรายชื่อผู้เข้าร่วมงานทั้งหมดเรียบร้อยแล้ว');
       }
     });
@@ -296,6 +337,13 @@ class LuckyDrawApp {
     this.renderParticipantTable();
     this.renderWinnerHistoryTable();
     this.particleSphere.setCandidates(this.getEligibleParticipants());
+
+    // Update cloud storage list
+    fetch(CLOUD_SYNC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.participants)
+    }).catch(e=>{});
   }
 
   openQRModal() {
@@ -546,6 +594,14 @@ class LuckyDrawApp {
         this.renderParticipantTable();
         this.renderWinnerHistoryTable();
         this.particleSphere.setCandidates(this.getEligibleParticipants());
+
+        // Sync CSV import to cloud
+        fetch(CLOUD_SYNC_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.participants)
+        }).catch(e=>{});
+
         alert(`✅ นำเข้าข้อมูลสำเร็จเรียบร้อย! ทั้งหมด ${imported.length} รายชื่อ`);
       } else {
         alert('⚠️ ไม่พบข้อมูลรายชื่อในไฟล์ที่เลือก');
