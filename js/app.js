@@ -118,19 +118,16 @@ class LuckyDrawApp {
       }
     });
 
-    const dropzone = document.getElementById('fileDropzone');
+    // Copy-Paste Names Import Trigger
+    document.getElementById('importPastedBtn').addEventListener('click', () => this.handlePastedNamesImport());
+
+    // CSV File Input Trigger
     const fileInput = document.getElementById('csvFileInput');
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files.length) this.handleCSVImport(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length) this.handleCSVImport(e.target.files[0]);
-    });
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) this.handleCSVImport(e.target.files[0]);
+      });
+    }
 
     document.getElementById('clearAllParticipantsBtn').addEventListener('click', () => {
       if (confirm('⚠️ คุณต้องการลบรายชื่อผู้เข้าร่วมงานทั้งหมดหรือไม่?')) {
@@ -181,6 +178,61 @@ class LuckyDrawApp {
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
       }
     });
+  }
+
+  // Handle Copy-Pasted Names Text Area Import
+  handlePastedNamesImport() {
+    const textarea = document.getElementById('pastedNamesInput');
+    const rawText = textarea.value.trim();
+
+    if (!rawText) {
+      alert('⚠️ กรุณาก๊อปปี้และวางรายชื่อลงในช่องข้อความก่อนกดปุ่มนำเข้า');
+      return;
+    }
+
+    const lines = rawText.split('\n').filter(line => line.trim() !== '');
+    const newAdded = [];
+
+    lines.forEach((line, idx) => {
+      let name = '';
+      let company = 'CANON Member';
+
+      if (line.includes('\t')) {
+        const parts = line.split('\t').map(p => p.trim());
+        name = parts[0];
+        company = parts[1] || company;
+      } else if (line.includes(',')) {
+        const parts = line.split(',').map(p => p.trim());
+        name = parts[0];
+        company = parts[1] || company;
+      } else {
+        name = line.trim();
+      }
+
+      if (name) {
+        const newId = `CN-${Math.floor(1000 + Math.random() * 9000)}`;
+        const candidate = {
+          id: newId,
+          name: name,
+          dept: company,
+          registeredAt: new Date().toISOString()
+        };
+        newAdded.push(candidate);
+        this.participants.push(candidate);
+        CloudSyncEngine.pushCandidate(candidate);
+      }
+    });
+
+    if (newAdded.length > 0) {
+      this.saveState();
+      this.updateStats();
+      this.renderParticipantTable();
+      this.particleSphere.setCandidates(this.getEligibleParticipants());
+      textarea.value = '';
+      alert(`✅ นำเข้ารายชื่อสำเร็จเรียบร้อยแล้วทั้งหมด ${newAdded.length} คน!`);
+    } else {
+      alert('⚠️ ไม่พบรายชื่อที่ถูกต้องในช่องข้อความ');
+    }
   }
 
   handleAddPrize() {
@@ -287,7 +339,7 @@ class LuckyDrawApp {
 
     const eligible = this.getEligibleParticipants();
     if (eligible.length === 0) {
-      alert('⚠️ ไม่พบรายชื่อผู้เข้าร่วมในระบบ กรุณาสแกน QR Code หรือนำเข้าไฟล์ CSV รายชื่อผู้เข้าร่วมก่อนเริ่มจับรางวัล');
+      alert('⚠️ ไม่พบรายชื่อผู้เข้าร่วมในระบบ กรุณาสแกน QR Code หรือวางรายชื่อ/นำเข้าไฟล์ CSV ก่อนเริ่มจับรางวัล');
       this.resetDrawButtonState();
       return;
     }
@@ -449,11 +501,13 @@ class LuckyDrawApp {
       lines.forEach((line, idx) => {
         const parts = line.split(',').map(p => p.trim());
         if (parts.length >= 1 && parts[0]) {
-          imported.push({
-            id: parts[1] || `ID-${1000 + idx}`,
+          const newCand = {
+            id: parts[1] || `CN-${Math.floor(1000 + Math.random() * 9000)}`,
             name: parts[0],
-            dept: parts[2] || 'Smart Factory'
-          });
+            dept: parts[2] || 'CANON Member'
+          };
+          imported.push(newCand);
+          CloudSyncEngine.pushCandidate(newCand);
         }
       });
 
@@ -500,7 +554,7 @@ class LuckyDrawApp {
     tbody.innerHTML = '';
 
     if (this.participants.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:25px;">ยังไม่มีข้อมูลรายชื่อผู้เข้าร่วม (โปรดสแกน QR Code หรือนำเข้าไฟล์ CSV)</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:25px;">ยังไม่มีข้อมูลรายชื่อผู้เข้าร่วม (โปรดสแกน QR Code หรือก๊อปปี้วางรายชื่อ)</td></tr>`;
       return;
     }
 

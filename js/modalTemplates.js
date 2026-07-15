@@ -75,20 +75,39 @@
 
     <!-- Participant Management Modal -->
     <div id="manageModal" class="modal-overlay">
-      <div class="cyber-modal">
+      <div class="cyber-modal" style="max-width: 900px;">
         <div class="modal-header">
           <div class="modal-title"><i class="fas fa-users-cog"></i> จัดการรายชื่อผู้เข้าร่วมงาน</div>
           <button class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
-          <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: stretch;">
-            <div class="file-dropzone" id="fileDropzone" style="flex: 1; margin-bottom: 0;">
-              <i class="fas fa-file-csv" style="font-size: 2rem; color: var(--cyan-primary); margin-bottom: 5px;"></i>
-              <p style="font-size: 1rem; font-weight: 600;">คลิกหรือลากไฟล์ CSV/Excel เพื่อนำเข้ารายชื่อ</p>
-              <input type="file" id="csvFileInput" accept=".csv, .txt" style="display: none;">
+          
+          <!-- Copy Paste & CSV Import Controls -->
+          <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; background: rgba(0, 243, 255, 0.03); padding: 18px; border-radius: 10px; border: 1px solid var(--border-cyan);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 style="font-family: var(--font-title); color: var(--cyan-primary);"><i class="fas fa-paste"></i> วางรายชื่อ (Copy-Paste Text) หรือ นำเข้าไฟล์ CSV</h4>
+              <button id="clearAllParticipantsBtn" class="cyber-btn danger" style="padding: 6px 16px; font-size: 0.8rem;">
+                <i class="fas fa-trash-alt"></i> ลบรายชื่อทั้งหมด
+              </button>
             </div>
-            <button id="clearAllParticipantsBtn" class="cyber-btn danger" style="padding: 0 20px;"><i class="fas fa-trash-alt"></i> ลบรายชื่อทั้งหมด</button>
+            
+            <!-- Paste Area -->
+            <textarea id="pastedNamesInput" class="cyber-input" style="height: 90px; resize: vertical; font-family: var(--font-body); font-size: 0.95rem; line-height: 1.4;" placeholder="วางรายชื่อที่นี่ (1 ชื่อต่อ 1 บรรทัด หรือ ก๊อปปี้คอลัมน์จาก Excel เช่น:
+นายสมชาย ใจดี, บริษัท แคนนอน
+นายสมศักดิ์ รักดี, Canon Thailand)"></textarea>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+              <button id="importPastedBtn" class="cyber-btn" style="background: rgba(0, 255, 136, 0.15); border-color: var(--green-active); color: var(--green-active);">
+                <i class="fas fa-file-import"></i> นำเข้ารายชื่อที่วางไว้
+              </button>
+              
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">หรือลากไฟล์ CSV:</span>
+                <input type="file" id="csvFileInput" accept=".csv, .txt" class="cyber-input" style="font-size: 0.8rem; padding: 6px 12px; width: auto;">
+              </div>
+            </div>
           </div>
+
           <div class="table-container">
             <table class="cyber-table">
               <thead>
