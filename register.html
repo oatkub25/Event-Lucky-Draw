@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CANON Lucky Draw - Registration / ลงทะเบียนเข้าร่วมงาน</title>
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -214,15 +213,14 @@
       <div class="success-icon"><i class="fas fa-check"></i></div>
       <h3 style="font-family: var(--font-title); color: var(--green-active); font-size: 1.4rem;" id="succTitle">ลงทะเบียนสำเร็จ!</h3>
       <p style="color: var(--text-main); margin-top: 5px;" id="succDesc">คุณเข้าสู่ระบบสุ่มรางวัลเรียบร้อยแล้ว</p>
-      
-      <div class="badge-id" id="assignedId">ID: SF-9999</div>
-
+      <div class="badge-id" id="assignedId">ID: CN-9999</div>
       <p style="color: var(--text-muted); font-size: 0.85rem;" id="succFoot">ขอบคุณที่เข้าร่วมงาน CANON Event</p>
     </div>
   </div>
 
   <script>
     const CLOUD_SYNC_URL = 'https://kvdb.io/WJ2N9Z4cT8eR5xL1pQ7m2a/sf_canon_participants';
+    const REALTIME_STREAM_URL = 'https://ntfy.sh/sf_canon_draw_room_2026';
 
     function switchLang(lang) {
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
@@ -286,7 +284,16 @@
       participants.push(newCandidate);
       localStorage.setItem('sf_participants', JSON.stringify(participants));
 
-      // 2. Real-time Internet Cloud Sync to main stage screen
+      // 2. Instant Real-time SSE Broadcast (0.1 Second Latency) to Main Laptop Screen
+      try {
+        fetch(REALTIME_STREAM_URL, {
+          method: 'POST',
+          headers: { 'Title': 'New Candidate', 'Tags': 'user' },
+          body: JSON.stringify(newCandidate)
+        });
+      } catch (err) {}
+
+      // 3. Persistent Cloud Database Sync
       try {
         const fetchRes = await fetch(CLOUD_SYNC_URL);
         let cloudList = [];
@@ -301,9 +308,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cloudList)
         });
-      } catch (err) {
-        console.log('Cloud sync pending', err);
-      }
+      } catch (err) {}
 
       document.getElementById('regForm').style.display = 'none';
       document.getElementById('assignedId').textContent = `ID: ${newId}`;
