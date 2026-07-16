@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CANON - Lucky Draw System</title>
+  <title>CANON - Lucky Draw System / 抽選システム</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -16,21 +16,21 @@
         <div class="brand-icon canon-brand-icon">CANON</div>
         <div class="brand-text">
           <span class="brand-title">CANON</span>
-          <span class="brand-subtitle">LUCKY DRAW</span>
+          <span class="brand-subtitle">LUCKY DRAW / 抽選会</span>
         </div>
       </div>
 
       <div class="hud-status-group">
         <div class="telemetry-item">
-          <span class="telemetry-label">ผู้เข้าร่วมทั้งหมด</span>
+          <span class="telemetry-label">ผู้เข้าร่วมทั้งหมด / 参加者</span>
           <span class="telemetry-value" id="totalParticipantsCount">0</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-label">พร้อมสุ่ม</span>
+          <span class="telemetry-label">พร้อมสุ่ม / 抽選対象</span>
           <span class="telemetry-value" style="color: var(--green-active);" id="eligibleCount">0</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-label">ผู้โชคดีสะสม</span>
+          <span class="telemetry-label">ผู้โชคดี / 当選者</span>
           <span class="telemetry-value" style="color: var(--amber-warning);" id="totalWinnersCount">0</span>
         </div>
 
@@ -39,12 +39,12 @@
         </div>
 
         <div class="header-actions">
-          <button class="icon-btn" id="prizesBtn" title="จัดการของรางวัล" style="color: var(--green-active); border-color: var(--green-active);"><i class="fas fa-gift"></i></button>
-          <button class="icon-btn" id="qrBtn" title="สร้าง QR Code ลงทะเบียน" style="color: var(--amber-warning); border-color: var(--amber-warning);"><i class="fas fa-qrcode"></i></button>
-          <button class="icon-btn" id="soundToggleBtn" title="เปิด/ปิด เสียงเอฟเฟกต์"><i class="fas fa-volume-up"></i></button>
-          <button class="icon-btn" id="manageBtn" title="จัดการรายชื่อ (CSV)"><i class="fas fa-users"></i></button>
-          <button class="icon-btn" id="historyBtn" title="ประวัติผู้โชคดี"><i class="fas fa-trophy"></i></button>
-          <button class="icon-btn" id="fullscreenBtn" title="เต็มจอ (F)"><i class="fas fa-expand"></i></button>
+          <button class="icon-btn" id="prizesBtn" title="จัดการของรางวัล / 賞品管理" style="color: var(--green-active); border-color: var(--green-active);"><i class="fas fa-gift"></i></button>
+          <button class="icon-btn" id="qrBtn" title="สร้าง QR Code ลงทะเบียน / QR登録" style="color: var(--amber-warning); border-color: var(--amber-warning);"><i class="fas fa-qrcode"></i></button>
+          <button class="icon-btn" id="soundToggleBtn" title="เปิด/ปิด เสียง / 音声ON/OFF"><i class="fas fa-volume-up"></i></button>
+          <button class="icon-btn" id="manageBtn" title="จัดการรายชื่อ / 参加者管理"><i class="fas fa-users"></i></button>
+          <button class="icon-btn" id="historyBtn" title="ประวัติผู้โชคดี / 当選履歴"><i class="fas fa-trophy"></i></button>
+          <button class="icon-btn" id="fullscreenBtn" title="เต็มจอ / 全画面 (F)"><i class="fas fa-expand"></i></button>
         </div>
       </div>
     </header>
@@ -59,7 +59,7 @@
             <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop" id="stagePrizeImg" class="showcase-prize-img" alt="Prize">
           </div>
           <div class="showcase-info">
-            <h2 class="showcase-prize-title" id="stagePrizeTitle">รางวัลใหญ่ Grand Prize</h2>
+            <h2 class="showcase-prize-title" id="stagePrizeTitle">รางวัลใหญ่ Grand Prize / 大賞</h2>
           </div>
         </div>
       </div>
@@ -71,17 +71,17 @@
 
     <footer class="control-bar">
       <div class="prize-selector-group">
-        <span class="prize-label"><i class="fas fa-gift"></i> เลือกระดับรางวัล:</span>
+        <span class="prize-label"><i class="fas fa-gift"></i> เลือกระดับรางวัล / 賞品選択:</span>
         <select id="prizeSelect" class="cyber-select"></select>
       </div>
 
       <div class="draw-btn-wrapper">
-        <button id="drawBtn" class="draw-btn"><i class="fas fa-bolt"></i> เริ่มจับรางวัล</button>
+        <button id="drawBtn" class="draw-btn"><i class="fas fa-bolt"></i> เริ่มจับรางวัล / 抽選開始</button>
       </div>
 
       <div class="batch-selector-group">
-        <span class="prize-label"><i class="fas fa-users"></i> สุ่มรอบละ:</span>
-        <span class="batch-badge" id="activeBatchDisplay">1 คน</span>
+        <span class="prize-label"><i class="fas fa-users"></i> สุ่มรอบละ / 回:</span>
+        <span class="batch-badge" id="activeBatchDisplay">1 คน / 名</span>
       </div>
     </footer>
   </div>
